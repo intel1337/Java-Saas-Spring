@@ -3,7 +3,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.todolist.todolist.model.*;
 import com.todolist.todolist.service.*;
-import com.todolist.todolist.dto.*;;
+import com.todolist.todolist.dto.*;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/tasks") // Route
@@ -15,5 +18,11 @@ public class TaskController { // Controlleur
 	public Task addTask(@RequestBody TaskRequest _taskRequest) { // Fonction executée
 		return _taskService.addTask(_taskRequest.getTitle(), _taskRequest.getDescription());
 	}
+    @GetMapping("/get-all")
+    public List<Task> getAll() {
+        return _taskService.getAllTasks();
+
+    }
+    
     
 }
