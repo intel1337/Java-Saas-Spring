@@ -1,6 +1,7 @@
+<script setup>
+import TodoList from '~/components/TodoList.vue'
+</script>
+
 <template>
-  <div>
-    <NuxtRouteAnnouncer />
-    <NuxtWelcome />
-  </div>
+  <TodoList></TodoList>
 </template>

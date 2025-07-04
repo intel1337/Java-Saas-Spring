@@ -19,5 +19,22 @@ public class TaskService {
     public List<Task> getAllTasks() {
         return _taskRepository.findAll();
     }
+    public Task updateTaskStatus(String id, Boolean completed) {
+        Task task = _taskRepository.findById(id).orElse(null);
+        if (task != null) {
+            task.setCompleted(completed);
+            return _taskRepository.save(task);
+        }
+        return null;
+    }
+    public Task deleteTask(String id) {
+        Task task = _taskRepository.findById(id).orElse(null);
+        if (task != null) {
+            _taskRepository.deleteById(id);
+            return task;
+        }
+        return null;
+    }
+   
     
 }
