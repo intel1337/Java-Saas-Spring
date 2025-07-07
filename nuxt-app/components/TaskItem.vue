@@ -1,22 +1,43 @@
 <template>
-  <li class="todolist-item">
-    <input type="checkbox" :checked="completed" disabled />
+  <li class="todolist-item" @click="onClick">
+    <input type="checkbox" :checked="completed" @change.stop="onToggle" />
     <span>{{ title }}</span>
-    <button class="delete-btn" disabled>Delete</button>
+    <span class="desc">{{ description }}</span>
+    <button class="delete-btn" @click.stop="onDelete">Delete</button>
   </li>
 </template>
 
 <script setup>
-defineProps({
+const emit = defineEmits(['update-task', 'delete-task', 'click'])
+const props = defineProps({
+  id: {
+    type: String,
+    required: true
+  },
   title: {
     type: String,
     required: true
+  },
+  description: {
+    type: String,
+    required: false,
+    default: ''
   },
   completed: {
     type: Boolean,
     default: false
   }
 })
+
+const onToggle = (e) => {
+  emit('update-task', props.id, e.target.checked)
+}
+const onDelete = () => {
+  emit('delete-task', props.id)
+}
+const onClick = () => {
+  emit('click')
+}
 </script>
 
 <style scoped>
@@ -37,6 +58,15 @@ defineProps({
   border: none;
   border-radius: 4px;
   padding: 4px 10px;
-  cursor: not-allowed;
+  cursor: pointer;
+}
+.desc {
+  margin-left: 12px;
+  color: #888;
+  font-size: 0.95em;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style> 

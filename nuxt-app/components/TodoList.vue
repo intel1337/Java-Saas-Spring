@@ -1,24 +1,78 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watchEffect } from 'vue'
+import { useFetch } from '#app'
 import TaskItem from '~/components/TaskItem.vue'
+import TaskFullScreen from '~/components/TaskFullScreen.vue'
 
 const newTask = ref('')
+const newDescription = ref('')
 const tasks = ref([])
+const errorMsg = ref('')
+const selectedTask = ref(null)
 
-onMounted(async () => {
-  try {
-    const response = await fetch('http://localhost:8080/tasks/get-all')
-    if (response.ok) {
-      const data = await response.json()
-      tasks.value = data
-    } else {
-
-      tasks.value = []
-    }
-  } catch (e) {
+const fetchTasks = async () => {
+  const { data, error } = await useFetch('http://localhost:8080/tasks/get-all')
+  if (data.value) {
+    tasks.value = data.value
+  } else {
     tasks.value = []
   }
-})
+}
+
+// Initial fetch
+fetchTasks()
+
+const addTask = async () => {
+  errorMsg.value = ''
+  if (!newTask.value) return
+  try {
+    await $fetch('http://localhost:8080/tasks/add', {
+      method: 'POST',
+      body: { title: newTask.value, description: newDescription.value },
+      headers: { 'Content-Type': 'application/json' }
+    })
+    newTask.value = ''
+    newDescription.value = ''
+    await fetchTasks()
+  } catch (e) {
+    errorMsg.value = 'Erreur lors de l\'ajout de la tâche.'
+    // Optionnel : log pour debug
+    console.error(e)
+  }
+}
+
+const updateTask = async (id, completed, description) => {
+  await $fetch(`http://localhost:8080/tasks/update-task/${id}?completed=${completed}`, {
+    method: 'PUT',
+    body: { description },
+    headers: { 'Content-Type': 'application/json' }
+  })
+  await fetchTasks()
+}
+
+const updateTaskDescription = async (id, description) => {
+  const task = tasks.value.find(t => t.id === id)
+  if (!task) return
+  await updateTask(id, task.completed, description)
+}
+
+const deleteTask = async (id) => {
+  await $fetch(`http://localhost:8080/tasks/delete-task/${id}`, {
+    method: 'DELETE'
+  })
+  await fetchTasks()
+}
+
+const openTask = (task) => {
+  selectedTask.value = { ...task }
+}
+const closeTask = () => {
+  selectedTask.value = null
+}
+const saveTask = async (task) => {
+  await updateTask(task.id, task.completed, task.description)
+  selectedTask.value = null
+}
 </script>
 
 <template>
@@ -28,19 +82,33 @@ onMounted(async () => {
     </header>
     <main class="todolist-main">
       <section class="todolist-input">
-        <input type="text" placeholder="Add a new task..." v-model="newTask" />
-        <button :disabled="!newTask">Add</button>
+        <input type="text" placeholder="Titre de la tâche..." v-model="newTask" />
+        <input type="text" placeholder="Description..." v-model="newDescription" />
+        <button :disabled="!newTask" @click="addTask">Add</button>
+        <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
       </section>
       <section class="todolist-list">
         <ul>
           <TaskItem
             v-for="task in tasks"
             :key="task.id"
+            :id="task.id"
             :title="task.title"
+            :description="task.description"
             :completed="task.completed"
+            @update-task="(id, completed) => updateTask(id, completed, task.description)"
+            @delete-task="deleteTask"
+            @click="openTask(task)"
           />
         </ul>
       </section>
+      <TaskFullScreen
+        v-if="selectedTask"
+        v-bind="selectedTask"
+        @close="closeTask"
+        @save="saveTask"
+        @delete-task="deleteTask"
+      />
     </main>
   </div>
 </template>
@@ -100,6 +168,11 @@ onMounted(async () => {
   text-align: center;
   margin-top: 24px;
   color: #aaa;
+  font-size: 0.95em;
+}
+.error-msg {
+  color: #ff4d4f;
+  margin-top: 8px;
   font-size: 0.95em;
 }
 </style> 
